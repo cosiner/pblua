@@ -157,13 +157,12 @@ int luaopen_pblua(lua_State *state) {
     pblua_new_userdata(state, desc);
     lua_setfield(state, LUA_REGISTRYINDEX, PBLUA_DESC_OBJ);
 
-    lua_newtable(state);
     luaL_Reg lib[] = {
         {"loadfile",   pblua_load_file},
         {"loadstring", pblua_load_string},
         {NULL, NULL}
     };
-    pblua_compat_setfuncs(state, lib);
+    pblua_compat_newlib(state, "pblua", lib);
 
     pb_state_t *s = pb_state_new(state);
     pb_state_register_pb_types(s);

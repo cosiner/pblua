@@ -9,6 +9,7 @@
 
 #define lua_objlen lua_rawlen
 #define pblua_compat_setfuncs(L, reg) luaL_setfuncs((L), (reg), 0)
+#define pblua_compat_newlib(L, name, reg) luaL_newlib((L), (reg))
 #define pblua_compat_requiref luaL_requiref
 
 #else
@@ -18,6 +19,7 @@
 #define lua_pushunsigned lua_pushinteger
 
 #define pblua_compat_setfuncs(L, reg) luaL_register((L), NULL, (reg))
+#define pblua_compat_newlib(L, name, reg) luaL_register((L), name, (reg))
 
 void pblua_compat_requiref(lua_State *L, const char *modname,
                            lua_CFunction openf, int glb);

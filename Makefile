@@ -57,7 +57,7 @@ $(BUILD_DIR)/%.o: %.c $(SOURCE_LUA_FILES_GEN)
 	$(CC) $(INCLUDE_PATHES) $(CFLAGS) -c -o $@ $<
 
 install:
-	mv build/libpblua.* /usr/local/lib
+	cp build/libpblua.* /usr/local/lib
 
 clean:
 	$(RM) -r $(BUILD_DIR)
@@ -65,12 +65,12 @@ clean:
 
 #==================================================================
 #                        TEST
-test: $(TEST_BIN) proto_pb
+test: $(TEST_BIN) $(BUILD_DIR)/testout/proto.pb
 	$<
 
-proto_pb: $(PROTO_FILES)
+$(BUILD_DIR)/testout/proto.pb: $(PROTO_FILES)
 	@mkdir -p $(BUILD_DIR)/testout
-	protoc -o $(BUILD_DIR)/testout/proto.pb $^
+	protoc -o $@ $^
 
 test_go: test/msg.pb.go
 	go test test/*.go -v
