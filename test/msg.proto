@@ -1,0 +1,61 @@
+syntax = "proto3";
+package test;
+
+import "google/protobuf/any.proto";
+
+message User {
+
+    message UserName {
+        enum Type {
+            UNKNOWN = 0;
+            A = 1;
+        }
+
+        string First = 1;
+        string Last = 2;
+        Type T = 4;
+    }
+    string String = 1;
+    repeated string Strings = 2;
+    sint32 Sint32 = 3;
+    repeated sint32 Sint32s = 4;
+    sint64 Sint64 = 5;
+    repeated sint64 Sint64s = 6;
+    int32 Int32 = 7;
+    repeated int32 Int32s = 8;
+    int64 Int64 = 9;
+    repeated int64 Int64s = 10;
+    uint32 Uint32 = 11;
+    repeated uint32 Uint32s = 12;
+    uint64 Uint64 = 13;
+    repeated uint64 Uint64s = 14;
+    fixed32 Fixed32 = 15;
+    repeated fixed32 Fixed32s = 16;
+    fixed64 Fixed64 = 17;
+    repeated fixed64 Fixed64s = 18;
+    sfixed32 Sfixed32 = 19;
+    repeated sfixed32 Sfixed32s = 20;
+    sfixed64 Sfixed64 = 21;
+    repeated sfixed64 Sfixed64s = 22;
+    float Float = 23;
+    repeated float Floats = 24;
+    double Double = 25;
+    repeated double Doubles = 26;
+    bool Bool = 27;
+    repeated bool Bools = 28;
+    bytes Bytes = 29;
+    repeated bytes Bytess = 30;
+
+    repeated int32 IntsPacked = 31 [packed = true];
+
+    map<int32, string> Int32map = 32;
+    map<string, string> Stringmap = 33;
+
+    UserName Msg = 34;
+    repeated UserName Msgs = 35;
+
+    google.protobuf.Any Any = 36;
+
+    map<string, UserName> Msgmap = 37;
+};
+
