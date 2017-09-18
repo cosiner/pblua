@@ -133,7 +133,7 @@ static pb_error_t *read_number_ignore_wire(pb_buffer_t *buf, pb_state_t *s, fiel
     pb_error_t *err = NULL;
 
     wire_t w = (wire_t) h->wire;
-    if (w == WIRE_LENGTH_DELIMITED) {
+    if (w == WIRE_LENGTH_DELIMITED && field) {
         w = field->value_wire;
     }
     switch (w) {
@@ -154,39 +154,47 @@ static pb_error_t *read_number_ignore_wire(pb_buffer_t *buf, pb_state_t *s, fiel
             );
             break;
     }
-    if (err) {
+    if (err || !field) {
         return err;
     }
     switch (field->type) {
-        case PB_VAL_SINT32:
-            p.u64 = (uint64_t) bit32_dezigzag((int32_t) p.u64);
-        case PB_VAL_INT32:
-        case PB_VAL_SFIXED32:
-            pb_state_push_int32(s, (int32_t) p.u64);
+        case PB_VAL_SFIXED32: // Fixed32
+            pb_state_push_int32(s, (int32_t) p.u32);
             break;
-        case PB_VAL_ENUM:
-        case PB_VAL_UINT32:
         case PB_VAL_FIXED32:
-            pb_state_push_uint32(s, (uint32_t) p.u64);
-            break;
-        case PB_VAL_BOOL:
-            pb_state_push_bool(s, p.u64 > 0);
-            break;
-        case PB_VAL_SINT64:
-            p.u64 = (uint64_t) bit64_dezigzag((int64_t) p.u64);
-        case PB_VAL_INT64:
-        case PB_VAL_SFIXED64:
-            pb_state_push_int64(s, (int64_t) p.u64);
-            break;
-        case PB_VAL_UINT64:
-        case PB_VAL_FIXED64:
-            pb_state_push_uint64(s, p.u64);
+            pb_state_push_uint32(s, (uint32_t) p.u32);
             break;
         case PB_VAL_FLOAT:
             pb_state_push_float(s, uint32_to_float(p.u32));
             break;
+        case PB_VAL_SFIXED64: // Fixed64
+            pb_state_push_int64(s, (int64_t) p.u64);
+            break;
+        case PB_VAL_FIXED64:
+            pb_state_push_uint64(s, p.u64);
+            break;
         case PB_VAL_DOUBLE:
             pb_state_push_double(s, uint64_to_double(p.u64));
+            break;
+        case PB_VAL_BOOL: // Varint: bool
+            pb_state_push_bool(s, p.u64 > 0);
+            break;
+        case PB_VAL_SINT32: // Varint: int32
+            p.u64 = (uint64_t) bit32_dezigzag((int32_t) p.u64);
+        case PB_VAL_INT32:
+            pb_state_push_int32(s, (int32_t) p.u64);
+            break;
+        case PB_VAL_ENUM: // Varint: uint32
+        case PB_VAL_UINT32:
+            pb_state_push_uint32(s, (uint32_t) p.u64);
+            break;
+        case PB_VAL_SINT64: // Varint: int64
+            p.u64 = (uint64_t) bit64_dezigzag((int64_t) p.u64);
+        case PB_VAL_INT64:
+            pb_state_push_int64(s, (int64_t) p.u64);
+            break;
+        case PB_VAL_UINT64: // Varint: uint64
+            pb_state_push_uint64(s, p.u64);
             break;
         default:
             return pb_error_new(
@@ -489,6 +497,19 @@ static bool tags_remove(tag_list_t *tags, uint64_t tag) {
     return false;
 }
 
+
+static pb_error_t *decode_skip_field(pb_buffer_t *buf, header_t *h) {
+    switch (h->wire) {
+        case WIRE_LENGTH_DELIMITED:
+            if (pb_buffer_discard(buf, h->len) != h->len) {
+                return pb_error_new(PB_ERR_UNEXPECTED_EOF, "unexpected EOF");
+            }
+            return NULL;
+        default:
+            return read_number_ignore_wire(buf, NULL, NULL, h, NULL);
+    }
+}
+
 static pb_error_t *
 decode_custom_message_no_header(pb_message_list_t *msgs, message_t *msg, pb_buffer_t *buf, pb_state_t *s, size_t len) {
     pb_state_push_map(s);
@@ -508,7 +529,10 @@ decode_custom_message_no_header(pb_message_list_t *msgs, message_t *msg, pb_buff
         }
         currField = message_find_field_by_tag(msg, currField, h.tag);
         if (!currField) {
-            pb_buffer_discard(&nbuf, h.len);
+            err = decode_skip_field(&nbuf, &h);
+            if (err) {
+                break;
+            }
             continue;
         }
         err = decode_message_field(msgs, &nbuf, s, currField, &h);

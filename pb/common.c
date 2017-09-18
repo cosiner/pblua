@@ -129,7 +129,6 @@ field_t *message_find_field_by_tag(message_t *msg, field_t *prev, uint64_t tag) 
     return NULL;
 }
 
-
 static void field_init(field_t *field, pb_string_t name, uint64_t tag, pb_valtype_t type, field_opts_t opts) {
     field->name = name;
     field->tag = tag;
